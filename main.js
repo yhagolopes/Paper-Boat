@@ -2,18 +2,16 @@ class Wave {
     constructor(positionX, positionY) {
         this.positionX = positionX;
         this.positionY = positionY;
-        this.width = 0;
-        this.height = 0;
-    };
+        this.radius = 0;
+        this.collided = false;
+    }
 
-    draw(context) {
-        context.fillStyle = "red";
-        context.fillRect(this.positionX, this.positionY, this.width, this.height);
+    draw(renderer) {
+        renderer.drawCircle(this);
     }
 
     update() {
-        this.width += 5;
-        this.height += 5;
+        this.radius += 5;
     }
 };
 
@@ -23,67 +21,78 @@ class PaperBoat {
         this.positionY = positionY;
         this.width = 100;
         this.height = 100;
+        this.color = "green";
     }
 
-    draw(context) {
-        context.fillStyle = "green";
-        context.fillRect(this.positionX, this.positionY, this.width, this.height);
+    draw(renderer) {
+        renderer.drawQuad(this);
     }
 
-    update(canvas) {
-        if (this.positionX <= canvas.width - 100) {
-            
+    update(canvas, wave) {
+        if (this.positionX == wave.positionX) {
+
         }
         
     }
 };
 
+class Renderer {
+    constructor(canvasContext) {
+        this.canvasContext = canvasContext;
+    }
 
-const game = {
-    canvas: null,
-    canvasContext: null,
-    paperBoat: null,
-    wave: null,
+    drawQuad(quad) {
+        this.canvasContext.fillStyle = quad.color;
+        this.canvasContext.fillRect(quad.positionX, quad.positionY, quad.width, quad.height);
+    }
 
-    init: function() {
-        this.canvas = document.querySelector("#game");
-        this.canvasContext = this.canvas.getContext("2d");
-        this.setFullscreen();
-
-        this.canvas.addEventListener("click", this.onclick.bind(this));
-
-        this.paperBoat = new PaperBoat(250, 250);
-        this.wave = new Wave(10, 10);
-    },
-
-    setFullscreen: function() {
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
-    },
-
-    draw: function() {
-        // Clear screen
-        this.canvasContext.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        this.wave.draw(this.canvasContext);
-        this.paperBoat.draw(this.canvasContext);
-
-        this.update();
-        requestAnimationFrame(this.draw.bind(this));
-    },
-
-    update: function() {
-        this.wave.update();
-        this.paperBoat.update(this.canvas);
-    },
-
-    onclick: function(event) {
-        this.wave.positionX = event.clientX;
-        this.wave.positionY = event.clientY;
-        this.wave.width = 0;
-        this.wave.height = 0;
+    drawCircle(circle) {
+        this.canvasContext.beginPath();
+        this.canvasContext.arc(circle.positionX, circle.positionY, circle.radius, 0, 2 * Math.PI);
+        this.canvasContext.stroke();
     }
 };
 
-game.init();
-game.draw();
+class Game {
+    constructor(canvas) {
+        this.canvas = canvas;
+        this.canvasContext = canvas.getContext("2d");
+        this.setFullscreen();
+
+        // .bind(this) for this context not to be lost
+        this.canvas.addEventListener("click", this.clickEvent.bind(this));
+
+        this.paperBoat = new PaperBoat(250, 250);
+        this.wave = new Wave(10, 10);
+        this.renderer = new Renderer(this.canvasContext);
+    }
+
+    setFullscreen() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+    }
+
+    runLoop() {
+        // Clear screen
+        this.canvasContext.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        this.wave.draw(this.renderer);
+        this.paperBoat.draw(this.renderer);
+
+        this.wave.update();
+        this.paperBoat.update(this.canvas, this.wave);
+
+        // Call this function again with the same context
+        requestAnimationFrame(this.runLoop.bind(this));
+    }
+
+    // Callback function
+    clickEvent(event) {
+        this.wave.positionX = event.clientX;
+        this.wave.positionY = event.clientY;
+        this.wave.radius = 0;
+    }
+};
+
+const game = new Game(document.querySelector("#game"));
+game.runLoop();
