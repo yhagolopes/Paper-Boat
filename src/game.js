@@ -2,20 +2,18 @@ import Boat from "./boat.js";
 import Wave from "./wave.js";
 import Renderer from "./renderer.js";
 
-import * as Utils from "./utils.js";
-
 class Game {
-    constructor(canvas) {
+    constructor(canvas, boatImage) {
         this.canvas = canvas;
-        this.canvasContext = canvas.getContext("2d");
+        this.canvasContext = this.canvas.getContext("2d");
         this.setFullscreen();
+
+        this.paperBoat = new Boat(this.canvas, boatImage);
+        this.waves = [];
+        this.renderer = new Renderer(this.canvasContext);
 
         // .bind(this) for this context not to be lost
         this.canvas.addEventListener("click", this.clickEvent.bind(this));
-
-        this.paperBoat = new Boat(250, 250);
-        this.wave = new Wave(10, 10);
-        this.renderer = new Renderer(this.canvasContext);
     }
 
     setFullscreen() {
@@ -27,11 +25,17 @@ class Game {
         // Clear screen
         this.canvasContext.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
-        this.wave.draw(this.renderer);
         this.paperBoat.draw(this.renderer);
+        this.paperBoat.update(this.canvas.width, this.canvas.height);
 
-        this.wave.update();
-        this.paperBoat.update(this.canvas, this.wave);
+        for (let i = 0; i < this.waves.length; i++) {
+            this.waves[i].draw(this.renderer);
+            this.waves[i].update(this.paperBoat, this.canvas.width, this.canvas.height);
+
+            if (this.waves[i].outsideBounds === true) {
+                this.waves.splice(i, 1);
+            }
+        }
 
         // Call this function again with the same context
         requestAnimationFrame(this.runLoop.bind(this));
@@ -39,12 +43,7 @@ class Game {
 
     // Callback function
     clickEvent(event) {
-        this.wave.position.x = event.clientX;
-        this.wave.position.y = event.clientY;
-        this.wave.radius = 0;
-
-        let distance = Utils.getDistance(this.wave.position, this.paperBoat.position);
-        console.log(distance);
+        this.waves.push(new Wave(event.clientX, event.clientY));
     }
 };
 
