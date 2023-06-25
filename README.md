@@ -9,7 +9,7 @@ A simple game using Javascript, HTML and CSS.
 ![Screenshot](screenshots/1.jpeg)
 
 ## Demo
-[Click here](https://yhagolopes.github.io/Paper-Boat/)
+[Click here](https://yhagolopes.github.io/paper-boat/)
 
 ## License
 
